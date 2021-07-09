@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+      integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+      crossorigin="anonymous"
+    />
+
+    <!-- Font Awesome CSS -->
+    <link
+      href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.js"
+      integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+      integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"
+      integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.4.0/socket.io.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="mystyle.css" />
+    <!-- app.use로 경로 설정을 해줬기 때문에 href에 파일이름만 넣어주면 됨 -->
+
+    <script>
+      let nickname;
+      let title;
+      let contents;
+      let maked_date;
+      let kind;
+      let _id = document.location.href.split("=")[1];
+
+      $(document).ready(function () {
+        if (localStorage.getItem("token") == null) {
+          writings();
+          $('#login').show();
+        } else {
+          writings_login();
+          $('#logout').show();
+        }
+      });
+
+      // ******************로그인 안했을때 실행되는 ajax***************************
+      function writings() {
+        $("#writing").empty();
+
+        $.ajax({
+          type: "GET",
+          url: `/api/writings?_id=${_id}`,
+          data: {},
+          success: function (response) {
+            let blogs = response["blogs"];
+            let comments = response["comments"];
+            nickname = blogs[0]["nickname"];
+            title = blogs[0]["title"];
+            contents = blogs[0]["contents"];
+            maked_date = blogs[0]["maked_date"];
+            kind = blogs[0]["kind"];
+
+            let html1 = `<div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">작성자</span>
+          </div>
+          <input
+              id="writer"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${nickname}"
+              readonly="readonly">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">제목</span>
+          </div>
+          <input
+              id="title"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${title}"
+              readonly="readonly">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">내용</span>
+          </div>
+          <textarea
+              class="form-control"
+              id="content"
+              cols="30"
+              rows="5"
+              readonly="readonly">${contents}</textarea>
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">날짜</span>
+          </div>
+          <input
+              id="title"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${maked_date}"
+              readonly="readonly">
+      </div>
+      `;
+
+            let back_html = `<button type="button" onclick="back()" class="btn btn-primary btn-order">뒤로가기</button>`;
+
+            let comment_html = `
+            <p></p>
+            <div class="input-group mb-3">
+            <input type="text" class="form-control" id="comment" placeholder="댓글을 남겨주세요.">
+            <div align="right">
+                <button type="button" onclick="comment()" id="button-color" class="btn btn-warning">확인</button>
+            </div>
+        </div>`;
+
+            let comments_html = ``;
+
+            for (const comment_arr of comments) {
+              let comment_arr_html = `
+              <div class="comments">
+                    <h6 style="float: left" id="h6_comment_nickname">${comment_arr["nickname"]}</h6>
+                    <h6 style="float: left">${comment_arr["comment"]}</h6>
+              </div>
+            <p></p>`;
+              comments_html += comment_arr_html;
+            }
+
+            let temp_html = ``;
+
+            temp_html = html1 + back_html + comment_html + comments_html;
+
+            $("#writing").append(temp_html);
+          },
+        });
+      }
+
+      // ******************************************************로그인 했을때 실행되는 ajax********************************************************
+      function writings_login() {
+        $("#writing").empty();
+
+        $.ajax({
+          type: "GET",
+          url: `/api/writings_login?_id=${_id}`,
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          data: {},
+          success: function (response) {
+            let blogs = response["blogs"];
+            let comments = response["comments"];
+            let logined_nickname = response["nickname"];
+
+            nickname = blogs[0]["nickname"];
+            title = blogs[0]["title"];
+            contents = blogs[0]["contents"];
+            maked_date = blogs[0]["maked_date"];
+            kind = blogs[0]["kind"];
+
+            let html1 = `<div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">작성자</span>
+          </div>
+          <input
+              id="writer"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${nickname}"
+              readonly="readonly">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">제목</span>
+          </div>
+          <input
+              id="title"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${title}"
+              readonly="readonly">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">내용</span>
+          </div>
+          <textarea
+              class="form-control"
+              id="content"
+              cols="30"
+              rows="5"
+              readonly="readonly">${contents}</textarea>
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">날짜</span>
+          </div>
+          <input
+              id="title"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${maked_date}"
+              readonly="readonly">
+      </div>
+      `;
+
+            let modification_html = `<button
+          type="button"
+          onclick="modification()"
+          class="btn btn-primary btn-order"
+          id="modification">수정</button>
+          `;
+
+            let back_html = `<button type="button" onclick="back()" class="btn btn-primary btn-order">뒤로가기</button>`;
+
+            let comment_html = `
+            <p></p>
+            <div class="input-group mb-3">
+            <input type="text" class="form-control" id="comment" placeholder="댓글을 남겨주세요.">
+            <div align="right">
+                <button type="button" onclick="comment()" id="button-color" class="btn btn-warning">확인</button>
+            </div>
+        </div>`;
+
+            let comments_html = ``;
+
+            for (const comment_arr of comments) {
+              if (comment_arr["nickname"] == logined_nickname) {
+                let comment_id = comment_arr["_id"];
+                let comment_arr_html = `
+                  <p></p>
+                  <div class="comments">
+                        <h6 style="float: left" id="nick">${comment_arr["nickname"]}</h6>
+                        <input
+                          id="comment_input_${comment_id}"
+                          style="float: left"
+                          type="text"
+                          class="form-control comment_input"
+                          readonly
+                          value="${comment_arr["comment"]}">
+                          <button type="button" style="float:right" onclick="comment_delete()" id="comment_delete_button" class="btn btn-warning" value="${comment_id}">삭제
+                        </button>
+                        <button type="button" style="float: right; display: inline;" onclick="comment_modification(\'${comment_id}\')" id="modification_${comment_id}"
+                                class="btn btn-warning">수정
+                        </button>
+                        <button type="button" style="float: right; display: none;" onclick="comment_modification_complete()" id="complete_${comment_id}"
+                                class="btn btn-warning" value="${comment_id}">확인
+                        </button>        
+                  </div>
+                  `;
+                comments_html += comment_arr_html;
+              } else {
+                let comment_arr_html = `
+                <p></p>
+                  <div class="comments">
+                        <h6 style="float: left" id="h6_comment_nickname">${comment_arr["nickname"]}</h6>
+                        <h6 style="float: left">${comment_arr["comment"]}</h6>
+                  </div>
+                  `;
+                comments_html += comment_arr_html;
+              }
+            }
+
+            let temp_html = ``;
+
+            temp_html =
+              html1 +
+              modification_html +
+              back_html +
+              comment_html +
+              comments_html;
+
+            $("#writing").append(temp_html);
+          },
+        });
+      }
+
+      // ***************************************************************************글 수정***************************************************************
+      function modification() {
+        $("#writing").empty();
+
+        $.ajax({
+          type: "GET",
+          url: "/api/modification",
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          data: {},
+          success: function (response) {
+            if (response["result"] == nickname) {
+              temp_html = `<select class="form-control col-8" id="categorySelect">
+          <option value="introduce" selected="selected">소개</option>
+          <option value="diary">일기</option>
+          <option value="do_list">할 일</option>
+          <option value="visitor">방명록</option>
+      </select>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">작성자</span>
+          </div>
+          <input
+              id="writer"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${nickname}">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">제목</span>
+          </div>
+          <input
+              id="title"
+              type="text"
+              class="form-control"
+              aria-label="Default"
+              aria-describedby="inputGroup-sizing-default"
+              value="${title}">
+      </div>
+      <div class="input-group mb-3">
+          <div class="input-group-prepend">
+              <span class="input-group-text">내용</span>
+          </div>
+          <textarea
+              class="form-control"
+              id="content"
+              cols="30"
+              rows="5">${contents}</textarea>
+      </div>
+      <button
+          type="button"
+          onclick="update_writing()"
+          class="btn btn-primary btn-order">수정하기</button>
+          <button type="button" onclick="delete_writing()" class="btn btn-primary btn-order">삭제하기</button>
+      <button type="button" onclick="back()" class="btn btn-primary btn-order">뒤로가기</button>`;
+              $("#writing").append(temp_html);
+            } else {
+              alert("권한이 없습니다.");
+              window.location.href = `/writings.html?_id=${_id}`;
+            }
+          },
+        });
+      }
+
+      function update_writing() {
+        let title = $("#title").val();
+        let content = $("#content").val();
+        let kind = $("#categorySelect").val();
+
+        $.ajax({
+          type: "PATCH",
+          url: `/api/update?_id=${_id}`,
+          data: {
+            title: title,
+            contents: content,
+            kind: kind,
+          },
+          success: function (response) {
+            if (response["result"] == "success") {
+              alert("수정 완료!");
+              window.location.href = `/writings.html?_id=${_id}`;
+            }
+          },
+        });
+      }
+
+      function delete_writing() {
+        $.ajax({
+          type: "DELETE",
+          url: `/api/delete?_id=${_id}`,
+          data: {},
+          success: function (response) {
+            if (response["result"] == "success") {
+              alert("삭제 완료!");
+              window.location.href = "/home.html";
+            }
+          },
+        });
+      }
+
+      // 커멘트를 적어주는 ajax*****************************************************************************
+      function comment() {
+        let comment = $("#comment").val();
+        if (localStorage.getItem('token') == null) {
+          location.href = '/alert.html'
+        }
+        $.ajax({
+          type: "POST",
+          url: "/api/comment",
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          data: {
+            comment: comment,
+          },
+          success: function (response) {
+            if (response["result"] == "success") {
+              alert("작성 완료!");
+              window.location.href = `/writings.html?_id=${_id}`;
+            } else if (response["result"] == "error") {
+              alert("댓글 내용을 입력해주세요");
+            }
+          },
+          error: function (error) {
+            console.log(error);
+            location.href = '/alert.html'
+          }
+        });
+      }
+
+      function comment_modification_complete() {
+        let comment_id_receive = $(`#complete_${comment_id}`).val();
+        let comment_modification = $(`#comment_input_${comment_id}`).val();
+
+        $.ajax({
+          type: "PATCH",
+          url: `/api/update_comment?_id=${comment_id_receive}`,
+          data: {
+            comment_modification: comment_modification,
+          },
+          success: function (response) {
+            if (response["result"] == "success") {
+              alert("수정 완료!");
+              window.location.href = `/writings.html?_id=${_id}`;
+            }
+          },
+        });
+      }
+
+      function comment_delete() {
+        if (confirm("정말로 삭제하시겠습니까?")) {
+          comment_delete_complete();
+        } else {
+        }
+      }
+
+      function comment_delete_complete() {
+        let comment_id_receive = $("#comment_delete_button").val();
+
+        $.ajax({
+          type: "DELETE",
+          url: `/api/delete_comment?_id=${comment_id_receive}`,
+          data: {},
+          success: function (response) {
+            if (response["result"] == "success") {
+              window.location.href = `/writings.html?_id=${_id}`;
+            }
+          },
+        });
+      }
+
+      function back() {
+        window.location.href = "/home.html";
+      }
+
+      function sign_out() {
+        localStorage.clear();
+        window.location.href = "/";
+      }
+
+      function sign_in() {
+        window.location.href = "/";
+      }
+
+      function comment_modification(comment_id_receive) {
+        comment_id = comment_id_receive;
+
+        $(`#comment_input_${comment_id}`).attr("readonly", false);
+        $(`#modification_${comment_id}`).hide();
+        $(`#complete_${comment_id}`).show();
+      }
+    </script>
+
+    <title>글보기</title>
+  </head>
+
+  <body>
+    <div class="top_bar">
+      <p id="blog_title">웅 블로그</p>
+      <button
+        type="button"
+        onclick="sign_out()"
+        class="btn btn-primary btn-order"
+        style="display: none;"
+        id="logout"
+      >
+        로그아웃
+      </button>
+      <button
+        type="button"
+        onclick="sign_in()"
+        class="btn btn-primary btn-order"
+        style="display: none;"
+        id="login"
+      >
+        로그인
+      </button>
+    </div>
+    <div class="wrap" id="writing"></div>
+  </body>
+</html>
