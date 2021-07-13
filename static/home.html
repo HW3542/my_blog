@@ -54,7 +54,7 @@
         $("#categorySelect").on("change", function () {
           get_writings($(this).val());
         });
-
+        
         if (localStorage.getItem("token")) {
           $('#logout').show();
         } else {
@@ -70,7 +70,6 @@
           data: {},
           success: function (response) {
             let blogs = response["blogs"];
-            console.log(blogs);
             for (let i = 0; i < blogs.length; i++) {
               let _id = blogs[i]["_id"];
               let nickname = blogs[i]["nickname"];

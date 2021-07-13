@@ -56,10 +56,10 @@
       $(document).ready(function () {
         if (localStorage.getItem("token") == null) {
           writings();
-          $('#login').show();
+          $("#login").show();
         } else {
           writings_login();
-          $('#logout').show();
+          $("#logout").show();
         }
       });
 
@@ -146,13 +146,16 @@
             let comments_html = ``;
 
             for (const comment_arr of comments) {
-              let comment_arr_html = `
+              if (comment_arr["writings_id"] == _id) {
+                let comment_arr_html = `
               <div class="comments">
                     <h6 style="float: left" id="h6_comment_nickname">${comment_arr["nickname"]}</h6>
                     <h6 style="float: left">${comment_arr["comment"]}</h6>
               </div>
             <p></p>`;
-              comments_html += comment_arr_html;
+
+                comments_html += comment_arr_html;
+              }
             }
 
             let temp_html = ``;
@@ -259,7 +262,10 @@
             let comments_html = ``;
 
             for (const comment_arr of comments) {
-              if (comment_arr["nickname"] == logined_nickname) {
+              if (
+                comment_arr["nickname"] == logined_nickname &&
+                comment_arr["writings_id"] == _id
+              ) {
                 let comment_id = comment_arr["_id"];
                 let comment_arr_html = `
                   <p></p>
@@ -283,7 +289,7 @@
                   </div>
                   `;
                 comments_html += comment_arr_html;
-              } else {
+              } else if (comment_arr["writings_id"] == _id) {
                 let comment_arr_html = `
                 <p></p>
                   <div class="comments">
@@ -416,8 +422,8 @@
       // 커멘트를 적어주는 ajax*****************************************************************************
       function comment() {
         let comment = $("#comment").val();
-        if (localStorage.getItem('token') == null) {
-          location.href = '/alert.html'
+        if (localStorage.getItem("token") == null) {
+          location.href = "/alert.html";
         }
         $.ajax({
           type: "POST",
@@ -427,6 +433,7 @@
           },
           data: {
             comment: comment,
+            writings_id: _id,
           },
           success: function (response) {
             if (response["result"] == "success") {
@@ -437,9 +444,8 @@
             }
           },
           error: function (error) {
-            console.log(error);
-            location.href = '/alert.html'
-          }
+            location.href = "/alert.html";
+          },
         });
       }
 
@@ -516,7 +522,7 @@
         type="button"
         onclick="sign_out()"
         class="btn btn-primary btn-order"
-        style="display: none;"
+        style="display: none"
         id="logout"
       >
         로그아웃
@@ -525,7 +531,7 @@
         type="button"
         onclick="sign_in()"
         class="btn btn-primary btn-order"
-        style="display: none;"
+        style="display: none"
         id="login"
       >
         로그인

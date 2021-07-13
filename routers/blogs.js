@@ -125,7 +125,7 @@ router.post("/users", async (req, res) => {
 
 //  커멘트 작성 api******************************************************************************************
 router.post("/comment", authMiddleware, async (req, res) => {
-  let { comment } = req.body; // req.body 이후에 [] 인자가 없으므로 키값과 변수명이 같다고 보므로 변수명을 통일시켜야 함. 변수명을 맘대로 지어서 값이 들어가지 않았다.
+  let { comment, writings_id } = req.body;
   let { nickname } = res.locals.user;
   let date = new Date(); // 현재 시간을 불러와주는 인스턴스를 받는 변수 선언
   let maked_date = date; // maked_date가 필요하기 때문에 date만 안쓰고 maked_date를 선언하고 date를 넣어준다
@@ -139,6 +139,7 @@ router.post("/comment", authMiddleware, async (req, res) => {
     nickname,
     comment,
     maked_date,
+    writings_id,
   });
 
   res.send({ result: "success" });

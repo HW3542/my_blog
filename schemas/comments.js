@@ -14,6 +14,10 @@ const commentSchema = new Schema({
     type: Date,
     required: true,
   },
+  writings_id: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("comments", commentSchema);
