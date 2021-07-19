@@ -10,3 +10,4 @@
 ## 사용 기술
 * Node.js
 * express 프레임워크
+* mongoDB
